@@ -88,12 +88,12 @@ class Parser:
         acciones = []
         while self.posicion < len(self.tokens) and self.tokens[self.posicion] != 'END':
             verbo = self.consumir()
-            
+
             # Si el comando es de una sola palabra, lo anadimos y continuamos
             if verbo == 'GAME_OVER':
                 acciones.append({'accion': verbo, 'objeto': None, 'params': []})
                 continue
-            
+
             # Si no, parseamos el resto de la accion
             objeto = self.consumir()
             params = []
@@ -120,11 +120,11 @@ def generar_codigo(ast, archivo_salida):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print "Uso: python compiler.py <archivo_entrada.brick>"
+        print("Uso: python compiler.py <archivo_entrada.brick>")
         sys.exit(1)
     archivo_entrada = sys.argv[1]
     archivo_salida = archivo_entrada.replace('.brick', '.json')
-    print "Compilando " + archivo_entrada + "..."
+    print("Compilando " + archivo_entrada + "...")
     try:
         with open(archivo_entrada, 'r') as f:
             codigo = f.read()
@@ -132,8 +132,8 @@ if __name__ == "__main__":
         parser = Parser(tokens)
         ast = parser.parse()
         generar_codigo(ast, archivo_salida)
-        print "Compilacion exitosa! Archivo de juego creado en " + archivo_salida
+        print("Compilacion exitosa! Archivo de juego creado en " + archivo_salida)
     except Exception as e:
-        print "\n!!! ERROR DE COMPILACION !!!"
-        print str(e)
+        print("\n!!! ERROR DE COMPILACION !!!")
+        print(str(e))
         sys.exit(1)
