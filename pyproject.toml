@@ -1,0 +1,7 @@
+[project]
+name = "retrobrik-windows-version"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=2.7"
+dependencies = []
