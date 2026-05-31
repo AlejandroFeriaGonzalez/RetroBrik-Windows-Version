@@ -19,7 +19,7 @@ echo Compilando el juego: %1...
 echo ----------------------------------
 
 REM Ejecuta el compilador de Python.
-uv run compiler.py games\%1.brick
+python compiler.py games\%1.brick
 
 REM Verifica si el comando anterior (la compilacion) fallo.
 if errorlevel 1 (
@@ -35,7 +35,7 @@ echo Compilacion exitosa. Iniciando el juego...
 echo ----------------------------------
 
 REM --- FASE 2: EJECUCION ---
-uv run runtime.py games\%1.json
+python runtime.py games\%1.json
 
 REM Fin del script.
 echo.

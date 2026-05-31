@@ -1,7 +1,13 @@
-<programa> ::= <tipo_juego> <grid> <definiciones> <eventos>
+<programa> ::= <tipo_juego> <grid> <configuraciones_opcionales> <definiciones> <eventos>
 
 <tipo_juego> ::= "GAME_TYPE" "SNAKE"
 <grid>       ::= "GAME_GRID" "(" <numero> "," <numero> ")"
+<configuraciones_opcionales> ::= <configuracion> | <configuracion> <configuraciones_opcionales> | epsilon
+<configuracion> ::= "COLOR_CONTRAST" <opcion_contraste> | "PATTERN_TYPE" <opcion_patron> | "TICK_MULTIPLIER" <numero_decimal> | "COLOR_FOOD" <valor_color>
+<opcion_contraste> ::= "HIGH" | "DEFAULT"
+<opcion_patron> ::= "STRIPES" | "DOTS" | "NONE"
+<numero_decimal> ::= <numero> | <numero> "." <numero>
+<valor_color> ::= <identificador>
 <definiciones> ::= <definicion_shape> | <definicion_shape> <definiciones>
 <eventos>    ::= <evento> | <evento> <eventos>
 

@@ -9,7 +9,7 @@ import sys
 
 def lexer(codigo_fuente):
     codigo_fuente = re.sub(r"#.*", "", codigo_fuente)
-    token_regex = r"\b[A-Z_]+\b|\d+|[\[\](),:]"
+    token_regex = r"\b[A-Z_]+\b|\d+\.\d+|\d+|[\[\](),:]"
     tokens = re.findall(token_regex, codigo_fuente)
     return tokens
 
@@ -31,6 +31,25 @@ class Parser:
                 self.parsear_shape()
             elif token_actual == "ON":
                 self.parsear_evento()
+            elif token_actual == "COLOR_CONTRAST":
+                self.consumir("COLOR_CONTRAST")
+                self.ast["config"]["color_contrast"] = self.consumir()
+            elif token_actual == "PATTERN_TYPE":
+                self.consumir("PATTERN_TYPE")
+                self.ast["config"]["pattern_type"] = self.consumir()
+            elif token_actual == "TICK_MULTIPLIER":
+                self.consumir("TICK_MULTIPLIER")
+                val = self.consumir()
+                try:
+                    self.ast["config"]["tick_multiplier"] = float(val)
+                except ValueError:
+                    self.ast["config"]["tick_multiplier"] = val
+            elif token_actual == "COLOR_FOOD":
+                self.consumir("COLOR_FOOD")
+                self.ast["config"]["color_food"] = self.consumir()
+            elif token_actual == "COLOR_PALETTE":
+                self.consumir("COLOR_PALETTE")
+                self.ast["config"]["color_palette"] = self.consumir()
             else:
                 self.posicion += 1
         return self.ast

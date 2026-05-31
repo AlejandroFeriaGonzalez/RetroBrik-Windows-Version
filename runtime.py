@@ -53,26 +53,54 @@ class Juego:
 
         self.label_controles = tk.Label(
             self.marco_score,
-            text="CONTROLES\nFlechas: Mover/Rotar",
+            text="CONTROLES\nFlechas: Mover/Rotar\nP / ESC: Pausar",
             bg="#222222",
             fg="gray",
             font=("Consolas", 10),
         )
         self.label_controles.pack(pady=20, padx=10)
 
+        # Boton de Pausa Interactivo
+        self.pausado = False
+        self.boton_pausa = tk.Button(
+            self.marco_score,
+            text="PAUSAR",
+            bg="#333333",
+            fg="white",
+            font=("Consolas", 12, "bold"),
+            command=self.alternar_pausa,
+            activebackground="#555555",
+            activeforeground="white",
+            bd=0,
+            padx=10,
+            pady=5
+        )
+        self.boton_pausa.pack(pady=10, padx=10)
+
         # Configurar eventos de teclado. Usamos <Key> para capturar cualquier tecla
         self.root.bind("<Key>", self.manejar_input_gui)
+        self.root.bind("<Escape>", lambda e: self.alternar_pausa())
+        self.root.bind("<p>", lambda e: self.alternar_pausa())
+        self.root.bind("<P>", lambda e: self.alternar_pausa())
+
+        # Leer TICK_MULTIPLIER desde config (default 1.0)
+        multiplier = self.datos_juego.get("config", {}).get("tick_multiplier", 1.0)
+        try:
+            multiplier = float(multiplier)
+        except (ValueError, TypeError):
+            multiplier = 1.0
 
         if self.tipo_juego == "TETRIS":
             self.pieza_actual = None
             self.pieza_x, self.pieza_y, self.pieza_rotacion = 0, 0, 0
-            self.velocidad_gravedad = 0.4
+            self.velocidad_gravedad = 0.4 * multiplier
 
         if self.tipo_juego == "SNAKE":
             self.serpiente_cuerpo = []
             self.serpiente_direccion = (1, 0)
+            self.serpiente_ultima_direccion = (1, 0)
             self.posicion_comida = None
-            self.velocidad_gravedad = 0.15
+            self.velocidad_gravedad = 0.15 * multiplier
 
         self.timer_gravedad = 0
         self.ejecutar_evento("ON_START")
@@ -83,19 +111,52 @@ class Juego:
         self.root.after(50, self.game_loop)
         self.root.mainloop()
 
+    def alternar_pausa(self):
+        if self.juego_terminado:
+            return
+        self.pausado = not self.pausado
+        if self.pausado:
+            self.boton_pausa.config(text="REANUDAR", bg="#FF5555")
+            self.dibujar_pausa()
+        else:
+            self.boton_pausa.config(text="PAUSAR", bg="#333333")
+            self.dibujar()
+
+    def dibujar_pausa(self):
+        self.canvas.delete("all")
+        self.canvas.create_text(
+            self.ancho_canvas // 2,
+            self.alto_canvas // 2 - 20,
+            text="JUEGO PAUSADO",
+            fill="#FF5555",
+            font=("Consolas", 16, "bold"),
+            justify=tk.CENTER
+        )
+        self.canvas.create_text(
+            self.ancho_canvas // 2,
+            self.alto_canvas // 2 + 20,
+            text="Presione REANUDAR\no tecla 'P'/'ESC'\npara continuar.",
+            fill="white",
+            font=("Consolas", 10),
+            justify=tk.CENTER
+        )
+
     def game_loop(self):
         if self.juego_terminado:
             self.mostrar_game_over()
             return
 
-        # Logica de TICK/Gravedad
-        # El loop se ejecuta cada 50ms (0.05 segundos)
-        self.timer_gravedad += 0.05
-        if self.timer_gravedad >= self.velocidad_gravedad:
-            self.timer_gravedad = 0
-            self.ejecutar_evento("ON_TICK")
+        if not self.pausado:
+            # Logica de TICK/Gravedad
+            # El loop se ejecuta cada 50ms (0.05 segundos)
+            self.timer_gravedad += 0.05
+            if self.timer_gravedad >= self.velocidad_gravedad:
+                self.timer_gravedad = 0
+                self.ejecutar_evento("ON_TICK")
 
-        self.dibujar()
+            self.dibujar()
+        else:
+            self.dibujar_pausa()
 
         # Programa el siguiente ciclo de juego
         self.timer_id = self.root.after(50, self.game_loop)
@@ -108,6 +169,8 @@ class Juego:
         sys.exit(0)
 
     def manejar_input_gui(self, event):
+        if self.pausado:
+            return
         key = event.keysym.upper()
 
         # Mapeo de teclas de flecha
@@ -134,12 +197,35 @@ class Juego:
         self.canvas.delete("all")  # Borrar todo en cada frame
         self.label_score.config(text="PUNTUACION\n" + str(self.puntuacion))
 
-        # Colores
-        COLOR_GRID_FIJA = "#343434"  # Gris oscuro para las celdas fijadas (Tetris)
-        COLOR_PIEZA = "#00FFFF"  # Cyan para la pieza activa (Tetris)
-        COLOR_SNAKE_CABEZA = "#00FF00"  # Verde brillante
-        COLOR_SNAKE_CUERPO = "#33CC33"  # Verde normal
-        COLOR_FOOD = "#FF0000"  # Rojo
+        # Configuracion de Colores y Accesibilidad
+        high_contrast = self.datos_juego.get("config", {}).get("color_contrast", "DEFAULT") == "HIGH"
+        color_palette = self.datos_juego.get("config", {}).get("color_palette", "DEFAULT")
+        color_food_config = self.datos_juego.get("config", {}).get("color_food")
+
+        if high_contrast:
+            COLOR_GRID_FIJA = "#FFFFFF"      # Blanco para alto contraste
+            COLOR_PIEZA = "#FFFF00"          # Amarillo brillante
+            COLOR_SNAKE_CABEZA = "#00FFFF"   # Cyan brillante
+            COLOR_SNAKE_CUERPO = "#00FF00"   # Verde neon
+            COLOR_FOOD = "#FF00FF"           # Magenta brillante
+        else:
+            if color_palette == "PASTEL":
+                COLOR_GRID_FIJA = "#AEC6CF"  # Azul pastel
+                COLOR_PIEZA = "#FFB347"      # Naranja pastel
+            else:
+                COLOR_GRID_FIJA = "#343434"  # Gris oscuro
+                COLOR_PIEZA = "#00FFFF"      # Cyan
+            
+            COLOR_SNAKE_CABEZA = "#00FF00"   # Verde
+            COLOR_SNAKE_CUERPO = "#33CC33"   # Verde normal
+            COLOR_FOOD = "#FF0000"           # Rojo
+
+        if color_food_config:
+            import re
+            if re.match(r"^[0-9a-fA-F]{6}$", color_food_config):
+                COLOR_FOOD = "#" + color_food_config
+            else:
+                COLOR_FOOD = color_food_config
 
         # 1. Dibujar la cuadricula estatica (grid base)
         for y in range(self.alto):
@@ -164,18 +250,36 @@ class Juego:
             # Comida
             if self.posicion_comida:
                 x, y = self.posicion_comida
-                self.dibujar_celda(x, y, COLOR_FOOD)
+                self.dibujar_celda(x, y, COLOR_FOOD, es_comida=True)
             # Cuerpo de la Serpiente
             for i, segmento in enumerate(self.serpiente_cuerpo):
                 x, y = segmento
                 color = COLOR_SNAKE_CABEZA if i == 0 else COLOR_SNAKE_CUERPO
                 self.dibujar_celda(x, y, color)
 
-    def dibujar_celda(self, x, y, color):
+    def dibujar_celda(self, x, y, color, es_comida=False):
         ts = self.taman_celda  # Alias para taman de celda
         x1, y1 = x * ts, y * ts
         x2, y2 = x1 + ts, y1 + ts
+
+        # Si es comida, usar forma ovalada para redundancia geometrica
+        if self.tipo_juego == "SNAKE" and es_comida:
+            self.canvas.create_oval(x1, y1, x2, y2, fill=color, outline="#FFFFFF", width=2)
+            return
+
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="#000000")
+
+        # Dibujar patrones para redundancia de diseño
+        pattern_type = self.datos_juego.get("config", {}).get("pattern_type", "NONE")
+        if pattern_type == "STRIPES":
+            # Rayas diagonales
+            self.canvas.create_line(x1, y1 + 5, x1 + ts - 5, y2, fill="#FFFFFF", width=1)
+            self.canvas.create_line(x1 + 5, y1, x1 + ts, y2 - 5, fill="#FFFFFF", width=1)
+        elif pattern_type == "DOTS":
+            # Punto central
+            cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+            r = 3
+            self.canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill="#FFFFFF", outline="#FFFFFF")
 
     def ejecutar_evento(self, nombre_evento):
         if nombre_evento in self.datos_juego["events"]:
@@ -239,10 +343,22 @@ class Juego:
         if not self.pieza_actual:
             return
         nueva_rotacion = (self.pieza_rotacion + 1) % len(self.pieza_actual)
+        # Intentar rotar en la posicion actual
         if not self.tetris_verificar_colision(
             self.pieza_x, self.pieza_y, nueva_rotacion
         ):
             self.pieza_rotacion = nueva_rotacion
+            return
+
+        # Wall Kick: Intentar desplazar a la izquierda o derecha
+        desplazamientos = [-1, 1, -2, 2]
+        for dx in desplazamientos:
+            if not self.tetris_verificar_colision(
+                self.pieza_x + dx, self.pieza_y, nueva_rotacion
+            ):
+                self.pieza_x += dx
+                self.pieza_rotacion = nueva_rotacion
+                return
 
     def tetris_fijar_pieza(self):
         matriz_pieza = self.pieza_actual[self.pieza_rotacion]
@@ -290,6 +406,7 @@ class Juego:
         )
         self.serpiente_cuerpo = [(coords[0], coords[1])]
         self.serpiente_direccion = (1, 0)
+        self.serpiente_ultima_direccion = (1, 0)
 
     def snake_spawn_comida(self):
         while True:
@@ -314,6 +431,7 @@ class Juego:
             return
 
         self.serpiente_cuerpo.insert(0, nueva_cabeza)
+        self.serpiente_ultima_direccion = self.serpiente_direccion
 
         if nueva_cabeza == self.posicion_comida:
             self.ejecutar_evento("ON_EAT_FOOD")
@@ -321,13 +439,13 @@ class Juego:
             self.serpiente_cuerpo.pop()
 
     def snake_cambiar_direccion(self, direccion):
-        if direccion == "UP" and self.serpiente_direccion[1] != 1:
+        if direccion == "UP" and self.serpiente_ultima_direccion[1] != 1:
             self.serpiente_direccion = (0, -1)
-        elif direccion == "DOWN" and self.serpiente_direccion[1] != -1:
+        elif direccion == "DOWN" and self.serpiente_ultima_direccion[1] != -1:
             self.serpiente_direccion = (0, 1)
-        elif direccion == "LEFT" and self.serpiente_direccion[0] != 1:
+        elif direccion == "LEFT" and self.serpiente_ultima_direccion[0] != 1:
             self.serpiente_direccion = (-1, 0)
-        elif direccion == "RIGHT" and self.serpiente_direccion[0] != -1:
+        elif direccion == "RIGHT" and self.serpiente_ultima_direccion[0] != -1:
             self.serpiente_direccion = (1, 0)
 
     def snake_crecer(self):

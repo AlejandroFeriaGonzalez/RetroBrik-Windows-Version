@@ -2,73 +2,63 @@
           PROYECTO: BrickScript - Un Lenguaje para Juegos Retro
 =============================================================
 
-BrickScript es un lenguaje de programacion simple (un "DSL" o Lenguaje de Dominio Especifico) disenado para crear juegos clasicos de estilo "Brick Game", como Tetris y Snake.
+BrickScript es un lenguaje de programación simple (un "DSL" o Lenguaje de Dominio Específico) diseñado para crear juegos clásicos de estilo "Brick Game", como Tetris y Snake, con un enfoque moderno en Diseño de Experiencia de Usuario (UX) y Accesibilidad.
 
-Este proyecto incluye el compilador que traduce el codigo BrickScript a un formato que la computadora entiende, y el motor de juego que lo ejecuta.
-
-El runtime fue implementado para Windows con Python 2.7
+Este proyecto incluye el compilador (`compiler.py`) que traduce el código BrickScript a un formato JSON intermedio, y el motor de juego (`runtime.py`) en Python 3 + Tkinter que lo ejecuta.
 
 -------------------------------------------------------------
-                      COMO JUGAR
+                      CÓMO JUGAR
 -------------------------------------------------------------
 
-Para compilar y ejecutar un juego, hemos creado un script que hace todo el trabajo por ti.
+Para compilar y ejecutar un juego, puedes usar el script automatizado `jugar.bat` (o correr los comandos con Python directamente).
 
-1. Abre una terminal de comandos (cmd.exe) en la carpeta principal del proyecto (C:\tpl).
+1. Abre una consola de comandos (PowerShell o cmd.exe) en la carpeta principal del proyecto.
 
-2. Usa el comando "jugar.bat" seguido del nombre del juego que quieres ejecutar (sin la extension .brick).
+2. Ejecuta `jugar.bat` seguido del nombre del juego que deseas ejecutar (sin la extensión `.brick`):
 
-   EJEMPLO PARA JUGAR SNAKE:
-   jugar.bat snake
+   PARA JUGAR LAS VERSIONES ORIGINALES (BASE):
+   .\jugar.bat snake
+   .\jugar.bat tetris
 
-   EJEMPLO PARA JUGAR TETRIS:
-   jugar.bat tetris
+   PARA JUGAR LAS VERSIONES INCLUSIVAS (REMAKES CON ACCESIBILIDAD):
+   .\jugar.bat snake_remake
+   .\jugar.bat tetris_remake
 
-El script primero compilara el archivo .brick correspondiente. Si la compilacion es exitosa, el juego se iniciara automaticamente.
-
-Para salir del juego, presiona la tecla 'q'.
-
+3. El script compilará automáticamente el archivo `.brick` de la carpeta `games/` y lanzará la interfaz gráfica.
 
 -------------------------------------------------------------
-                 SINTAXIS DE BRICKSCRIPT
+                  NUEVAS CARACTERÍSTICAS DE ACCESIBILIDAD
 -------------------------------------------------------------
 
-El lenguaje se basa en bloques de comandos simples y faciles de entender.
+La versión inclusiva introduce elementos diseñados para personas con limitaciones visuales (daltonismo, baja visión) o sensibilidad a la ansiedad (Andrés y Doña Martha):
 
---- COMANDOS GENERALES ---
+1. **Botón de Pausa**: Se ha añadido un botón interactivo "PAUSAR / REANUDAR" en el panel lateral y se puede controlar también con las teclas 'P' o 'ESC'.
+2. **Redundancia Geométrica**: La comida en Snake ahora se dibuja como un círculo para distinguirla del cuerpo de la serpiente y las paredes por su forma.
+3. **Wall Kick en Tetris**: Las piezas ya no se bloquean al rotar contra las paredes; el motor las empuja automáticamente hacia el centro para evitar frustración.
+4. **Prevención de Suicidio 180° en Snake**: Se bloquean giros instantáneos en la dirección opuesta, evitando muertes por pánico o pulsaciones rápidas.
 
-* GAME_TYPE [TIPO_DE_JUEGO]
-    Define que logica usara el motor. Obligatorio.
-    Ej: GAME_TYPE TETRIS
-    Ej: GAME_TYPE SNAKE
+-------------------------------------------------------------
+            SINTAXIS DE BRICKSCRIPT PARA DISEÑO INCLUSIVO
+-------------------------------------------------------------
 
-* GAME_GRID (ANCHO, ALTO)
-    Establece el tamano del area de juego.
-    Ej: GAME_GRID (10, 20)
+Los diseñadores pueden utilizar las siguientes etiquetas de configuración opcionales al inicio de sus archivos `.brick`:
 
-* DEFINE SHAPE [NOMBRE_PIEZA]: ... END
-    Define una forma geometrica con uno o mas estados (para rotaciones).
-    Ej: DEFINE SHAPE T_PIEZA: STATE 1: [0,1,0][1,1,1][0,0,0] END
+* `COLOR_CONTRAST [HIGH | DEFAULT]`
+    - Activa la paleta de colores de alto contraste (blanco, amarillo, cyan, neon y magenta).
+    - Ej: COLOR_CONTRAST HIGH
 
---- SINTAXIS PARA TETRIS ---
+* `PATTERN_TYPE [STRIPES | DOTS | NONE]`
+    - Agrega texturas internas (rayas o puntos) a los bloques para que el usuario diferencie las piezas sin depender exclusivamente del color.
+    - Ej: PATTERN_TYPE STRIPES
 
-Eventos disponibles: ON START, ON TICK, ON LINE_CLEAR, ON KEY_UP, ON KEY_DOWN, ON KEY_LEFT, ON KEY_RIGHT
+* `TICK_MULTIPLIER [Número]`
+    - Factor de velocidad que ralentiza (valores > 1.0) o acelera (valores < 1.0) el juego.
+    - Ej: TICK_MULTIPLIER 2.0 (Duplica el tiempo de reacción para Doña Martha)
 
-Acciones comunes:
-* SPAWN RANDOM_SHAPE
-* MOVE CURRENT_PIEZA [LEFT | RIGHT | DOWN]
-* ROTATE CURRENT_PIEZA
-* INCREASE_SCORE [PUNTOS]
+* `COLOR_FOOD [Nombre o Hexadecimal]` (Específico para Snake)
+    - Define un color personalizado para la comida.
+    - Ej: COLOR_FOOD FFFF00 (Amarillo brillante)
 
---- SINTAXIS PARA SNAKE ---
-
-Eventos disponibles: ON START, ON TICK, ON EAT_FOOD, ON COLLISION_WALL, ON COLLISION_SELF, ON KEY_UP, ON KEY_DOWN, ON KEY_LEFT, ON KEY_RIGHT
-
-Acciones comunes:
-* SPAWN PLAYER AT (X, Y)
-* SPAWN FOOD AT RANDOM
-* MOVE PLAYER FORWARD
-* SET_DIRECTION [UP | DOWN | LEFT | RIGHT]
-* INCREASE_SCORE [PUNTOS]
-* GROW PLAYER [CANTIDAD]
-* GAME_OVER
+* `COLOR_PALETTE [PASTEL | DEFAULT]` (Específico para Tetris)
+    - Define una paleta de colores pastel relajante.
+    - Ej: COLOR_PALETTE PASTEL
