@@ -9,7 +9,7 @@ import sys
 
 def lexer(codigo_fuente):
     codigo_fuente = re.sub(r"#.*", "", codigo_fuente)
-    token_regex = r"\b[A-Z_]+\b|\d+\.\d+|\d+|[\[\](),:]"
+    token_regex = r"\d+\.\d+|\b[A-Z0-9_]+\b|\d+|[\[\](),:]"
     tokens = re.findall(token_regex, codigo_fuente)
     return tokens
 

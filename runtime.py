@@ -51,37 +51,44 @@ class Juego:
         )
         self.label_score.pack(pady=40, padx=10)
 
+        # Verificar si es version inclusiva (remake)
+        config = self.datos_juego.get("config", {})
+        self.es_inclusivo = any(k in config for k in ["color_contrast", "pattern_type", "tick_multiplier", "color_food", "color_palette"])
+
         self.label_controles = tk.Label(
             self.marco_score,
-            text="CONTROLES\nFlechas: Mover/Rotar\nP / ESC: Pausar",
+            text="CONTROLES\nFlechas: Mover/Rotar\nP / ESC: Pausar" if self.es_inclusivo else "CONTROLES\nFlechas: Mover/Rotar",
             bg="#222222",
             fg="gray",
             font=("Consolas", 10),
         )
         self.label_controles.pack(pady=20, padx=10)
 
-        # Boton de Pausa Interactivo
+        # Boton de Pausa Interactivo (solo para version inclusiva)
         self.pausado = False
-        self.boton_pausa = tk.Button(
-            self.marco_score,
-            text="PAUSAR",
-            bg="#333333",
-            fg="white",
-            font=("Consolas", 12, "bold"),
-            command=self.alternar_pausa,
-            activebackground="#555555",
-            activeforeground="white",
-            bd=0,
-            padx=10,
-            pady=5
-        )
-        self.boton_pausa.pack(pady=10, padx=10)
+        if self.es_inclusivo:
+            self.boton_pausa = tk.Button(
+                self.marco_score,
+                text="PAUSAR",
+                bg="#333333",
+                fg="white",
+                font=("Consolas", 12, "bold"),
+                command=self.alternar_pausa,
+                activebackground="#555555",
+                activeforeground="white",
+                bd=0,
+                padx=10,
+                pady=5
+            )
+            self.boton_pausa.pack(pady=10, padx=10)
 
         # Configurar eventos de teclado. Usamos <Key> para capturar cualquier tecla
         self.root.bind("<Key>", self.manejar_input_gui)
-        self.root.bind("<Escape>", lambda e: self.alternar_pausa())
-        self.root.bind("<p>", lambda e: self.alternar_pausa())
-        self.root.bind("<P>", lambda e: self.alternar_pausa())
+        
+        if self.es_inclusivo:
+            self.root.bind("<Escape>", lambda e: self.alternar_pausa())
+            self.root.bind("<p>", lambda e: self.alternar_pausa())
+            self.root.bind("<P>", lambda e: self.alternar_pausa())
 
         # Leer TICK_MULTIPLIER desde config (default 1.0)
         multiplier = self.datos_juego.get("config", {}).get("tick_multiplier", 1.0)
@@ -112,14 +119,16 @@ class Juego:
         self.root.mainloop()
 
     def alternar_pausa(self):
-        if self.juego_terminado:
+        if not self.es_inclusivo or self.juego_terminado:
             return
         self.pausado = not self.pausado
         if self.pausado:
-            self.boton_pausa.config(text="REANUDAR", bg="#FF5555")
+            if hasattr(self, "boton_pausa"):
+                self.boton_pausa.config(text="REANUDAR", bg="#FF5555")
             self.dibujar_pausa()
         else:
-            self.boton_pausa.config(text="PAUSAR", bg="#333333")
+            if hasattr(self, "boton_pausa"):
+                self.boton_pausa.config(text="PAUSAR", bg="#333333")
             self.dibujar()
 
     def dibujar_pausa(self):
@@ -350,15 +359,16 @@ class Juego:
             self.pieza_rotacion = nueva_rotacion
             return
 
-        # Wall Kick: Intentar desplazar a la izquierda o derecha
-        desplazamientos = [-1, 1, -2, 2]
-        for dx in desplazamientos:
-            if not self.tetris_verificar_colision(
-                self.pieza_x + dx, self.pieza_y, nueva_rotacion
-            ):
-                self.pieza_x += dx
-                self.pieza_rotacion = nueva_rotacion
-                return
+        # Wall Kick: Intentar desplazar a la izquierda o derecha (solo en la version inclusiva/remake)
+        if self.es_inclusivo:
+            desplazamientos = [-1, 1, -2, 2]
+            for dx in desplazamientos:
+                if not self.tetris_verificar_colision(
+                    self.pieza_x + dx, self.pieza_y, nueva_rotacion
+                ):
+                    self.pieza_x += dx
+                    self.pieza_rotacion = nueva_rotacion
+                    return
 
     def tetris_fijar_pieza(self):
         matriz_pieza = self.pieza_actual[self.pieza_rotacion]
@@ -439,13 +449,16 @@ class Juego:
             self.serpiente_cuerpo.pop()
 
     def snake_cambiar_direccion(self, direccion):
-        if direccion == "UP" and self.serpiente_ultima_direccion[1] != 1:
+        # En la version inclusiva se usa serpiente_ultima_direccion para evitar el bug.
+        # En la version original se usa serpiente_direccion, permitiendo el bug.
+        dir_ref = self.serpiente_ultima_direccion if self.es_inclusivo else self.serpiente_direccion
+        if direccion == "UP" and dir_ref[1] != 1:
             self.serpiente_direccion = (0, -1)
-        elif direccion == "DOWN" and self.serpiente_ultima_direccion[1] != -1:
+        elif direccion == "DOWN" and dir_ref[1] != -1:
             self.serpiente_direccion = (0, 1)
-        elif direccion == "LEFT" and self.serpiente_ultima_direccion[0] != 1:
+        elif direccion == "LEFT" and dir_ref[0] != 1:
             self.serpiente_direccion = (-1, 0)
-        elif direccion == "RIGHT" and self.serpiente_ultima_direccion[0] != -1:
+        elif direccion == "RIGHT" and dir_ref[0] != -1:
             self.serpiente_direccion = (1, 0)
 
     def snake_crecer(self):

@@ -8,7 +8,7 @@
     "color_contrast": "HIGH",
     "pattern_type": "DOTS",
     "tick_multiplier": 2.0,
-    "color_food": "00"
+    "color_food": "FFFF00"
   },
   "shapes": {
     "PIXEL": [
